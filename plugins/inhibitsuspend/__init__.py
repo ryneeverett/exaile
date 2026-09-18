@@ -5,6 +5,8 @@ during music playback
 TODO: use Gtk.Application.inhibit() for less error prone inhibition.
 """
 
+import abc
+
 try:
     import _thread
 except ImportError:
@@ -110,7 +112,7 @@ class SuspendInhibit:
         self.adapter.destroy()
 
 
-class SuspendAdapter(adapters.PlaybackAdapter):
+class SuspendAdapter(adapters.PlaybackAdapter, abc.ABC):
     """
     Base class for Desktop Session suspend inhibitors
 
@@ -189,6 +191,7 @@ class SuspendAdapter(adapters.PlaybackAdapter):
         else:
             self.uninhibit()
 
+    @abc.abstractmethod
     def _inhibit_call(self):
         """
         Override, overriding method must set self.inhibited value
@@ -196,6 +199,7 @@ class SuspendAdapter(adapters.PlaybackAdapter):
         """
         raise NotImplementedError('Method not Overridden')
 
+    @abc.abstractmethod
     def _uninhibit_call(self):
         """
         Override, overriding method must set self.inhibited value
@@ -278,10 +282,10 @@ class PowerManagerAdapter(DbusSuspendAdapter):
     ):
         super().__init__(bus_name, object_name, interface_name)
 
-    def _dbus_inhibit_call(self):
+    def _inhibit_call(self):
         self.cookie = self.iface.Inhibit(self.PROGRAM, self.ACTIVITY)
 
-    def _dbus_uninhibit_call(self):
+    def _uninhibit_call(self):
         self.iface.UnInhibit(self.cookie)
 
 
@@ -301,7 +305,7 @@ class GnomeAdapter(DbusSuspendAdapter):
             'org.gnome.SessionManager',
         )
 
-    def _dbus_inhibit_call(self):
+    def _inhibit_call(self):
         """
         Gnome Interface has more parameters
         """
@@ -309,7 +313,7 @@ class GnomeAdapter(DbusSuspendAdapter):
             self.PROGRAM, 1, self.ACTIVITY, self.SUSPEND_FLAG
         )
 
-    def _dbus_uninhibit_call(self):
+    def _uninhibit_call(self):
         """
         Gnome Interface has different case
         """
